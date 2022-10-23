@@ -93,4 +93,69 @@ public record CustomerCompletableFeatureService(
                 .orElse(null);
     }
 
+    public CustomerResponse getCustomerByIdUsingAllOf(Integer customerId) {
+        log.info("Getting customer by id {} using allOf(...)", customerId);
+
+        int availableProcessors = Runtime.getRuntime().availableProcessors();
+        LocalDateTime startTime = LocalDateTime.now();
+        log.info("====> {} available processors. <====", availableProcessors);
+
+        log.info("Getting customer from database");
+
+        CompletableFuture<Optional<CustomerResponse>> customerResponseCF = CompletableFuture.supplyAsync(
+                () -> customerRepository.findById(customerId)
+                        .map(CustomerResponse::valueOf));
+
+        CompletableFuture<AddressResponse> addressResponseCF = CompletableFuture.supplyAsync(
+                () -> addressClient.getAddressByCustomerId(customerId)
+                        .map(AddressResponse::valueOf)
+                        .orElse(null));
+
+        CompletableFuture<List<PurchaseTransactionResponse>> purchaseTransactionResponsesCF = CompletableFuture.supplyAsync(
+                () -> Stream.ofNullable(purchaseTransactionClient.getPurchaseTransactionsByCustomerId(customerId))
+                        .flatMap(Collection::stream)
+                        .map(PurchaseTransactionResponse::valueOf)
+                        .collect(Collectors.toList()));
+
+        CompletableFuture<List<FinancialResponse>> financialResponsesCF = CompletableFuture.supplyAsync(
+                () -> Stream.ofNullable(financialClient.getFinancialInfoByCustomerId(customerId))
+                        .flatMap(Collection::stream)
+                        .map(FinancialResponse::valueOf)
+                        .collect(Collectors.toList()));
+
+        CompletableFuture<LoyaltyResponse> loyaltyResponseCF = CompletableFuture.supplyAsync(
+                () -> loyaltyClient.getLoyaltyPointsByCustomerId(customerId)
+                        .map(LoyaltyClientResponse::getPoints)
+                        .map(LoyaltyResponse::new)
+                        .orElse(null));
+
+
+        CustomerResponse customerResponse = CompletableFuture.allOf(
+                        customerResponseCF, addressResponseCF,
+                        purchaseTransactionResponsesCF, financialResponsesCF, loyaltyResponseCF)
+                .thenApply(unusedVariable -> {
+
+                            Optional<CustomerResponse> customerResponseOptional = customerResponseCF.join();
+
+                            customerResponseOptional.ifPresent(cr -> {
+                                AddressResponse addressResponse = addressResponseCF.join();
+                                cr.setAddressResponse(addressResponse);
+
+                                List<PurchaseTransactionResponse> purchaseTransactionResponses = purchaseTransactionResponsesCF.join();
+                                cr.setPurchaseTransactions(purchaseTransactionResponses);
+
+                                List<FinancialResponse> financialResponses = financialResponsesCF.join();
+                                cr.setFinancialResponses(financialResponses);
+
+                                LoyaltyResponse loyaltyResponse = loyaltyResponseCF.join();
+                                cr.setLoyaltyResponse(loyaltyResponse);
+                            });
+                            return customerResponseOptional
+                                    .orElse(null);
+                        }
+                ).join();
+        log.info("Operation duration {} sec", Duration.between(startTime, LocalDateTime.now()).toSeconds());
+
+        return customerResponse;
+    }
 }

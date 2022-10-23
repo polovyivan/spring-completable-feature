@@ -34,4 +34,9 @@ public class CustomerController {
         return customerCompletableFeatureService.getCustomerById(customerId);
     }
 
+    @GetMapping("/completable-feature-all-of/{customerId}")
+    public CustomerResponse getCustomerByIdUsingCompletableFeatureUsingAllOf(@PathVariable Integer customerId) {
+        return customerCompletableFeatureService.getCustomerByIdUsingAllOf(customerId);
+    }
+
 }
