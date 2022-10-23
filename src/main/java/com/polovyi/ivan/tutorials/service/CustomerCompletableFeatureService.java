@@ -11,14 +11,17 @@ import com.polovyi.ivan.tutorials.dto.LoyaltyClientResponse;
 import com.polovyi.ivan.tutorials.dto.LoyaltyResponse;
 import com.polovyi.ivan.tutorials.dto.PurchaseTransactionResponse;
 import com.polovyi.ivan.tutorials.repository.CustomerRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -37,37 +40,57 @@ public record CustomerCompletableFeatureService(
         log.info("====> {} available processors. <====", availableProcessors);
 
         log.info("Getting customer from database");
-        CustomerResponse customerResponse = customerRepository.findAll().stream()
-                .filter(c -> c.getId().equals(customerId))
-                .findFirst()
-                .map(CustomerResponse::valueOf)
-                .orElseThrow();
 
-        AddressResponse addressResponse = addressClient.getAddressByCustomerId(customerId)
-                .map(AddressResponse::valueOf)
-                .orElse(null);
+        CompletableFuture<Optional<CustomerResponse>> customerResponseCF = CompletableFuture.supplyAsync(
+                () -> customerRepository.findById(customerId)
+                        .map(CustomerResponse::valueOf));
 
-        List<PurchaseTransactionResponse> purchaseTransactionResponses = purchaseTransactionClient.getPurchaseTransactionsByCustomerId(
-                        customerId).stream().map(PurchaseTransactionResponse::valueOf)
-                .collect(Collectors.toList());
+        CompletableFuture<AddressResponse> addressResponseCF = CompletableFuture.supplyAsync(
+                () -> addressClient.getAddressByCustomerId(customerId)
+                        .map(AddressResponse::valueOf)
+                        .orElse(null));
 
-        List<FinancialResponse> financialResponses = financialClient.getFinancialInfoByCustomerId(customerId).stream()
-                .map(FinancialResponse::valueOf)
-                .collect(Collectors.toList());
+        CompletableFuture<List<PurchaseTransactionResponse>> purchaseTransactionResponsesCF = CompletableFuture.supplyAsync(
+                () -> Stream.ofNullable(purchaseTransactionClient.getPurchaseTransactionsByCustomerId(customerId))
+                        .flatMap(Collection::stream)
+                        .map(PurchaseTransactionResponse::valueOf)
+                        .collect(Collectors.toList()));
 
-        LoyaltyResponse loyaltyResponse = loyaltyClient.getLoyaltyPointsByCustomerId(customerId)
-                .map(LoyaltyClientResponse::getPoints)
-                .map(LoyaltyResponse::new)
-                .orElse(null);
+        CompletableFuture<List<FinancialResponse>> financialResponsesCF = CompletableFuture.supplyAsync(
+                () -> Stream.ofNullable(financialClient.getFinancialInfoByCustomerId(customerId))
+                        .flatMap(Collection::stream)
+                        .map(FinancialResponse::valueOf)
+                        .collect(Collectors.toList()));
 
-        customerResponse.setAddressResponse(addressResponse);
-        customerResponse.setPurchaseTransactions(purchaseTransactionResponses);
-        customerResponse.setFinancialResponses(financialResponses);
-        customerResponse.setLoyaltyResponse(loyaltyResponse);
+        CompletableFuture<LoyaltyResponse> loyaltyResponseCF = CompletableFuture.supplyAsync(
+                () -> loyaltyClient.getLoyaltyPointsByCustomerId(customerId)
+                        .map(LoyaltyClientResponse::getPoints)
+                        .map(LoyaltyResponse::new)
+                        .orElse(null));
+
+        Optional<CustomerResponse> response = customerResponseCF
+                .thenCombine(addressResponseCF, (customerResponse, addressResponse) -> {
+                    customerResponse.ifPresent(cr -> cr.setAddressResponse(addressResponse));
+                    return customerResponse;
+                })
+                .thenCombine(purchaseTransactionResponsesCF, (customerResponse, purchaseTransactionResponses) -> {
+                    customerResponse.ifPresent(cr -> cr.setPurchaseTransactions(purchaseTransactionResponses));
+                    return customerResponse;
+                })
+                .thenCombine(financialResponsesCF, (customerResponse, financialResponses) -> {
+                    customerResponse.ifPresent(cr -> cr.setFinancialResponses(financialResponses));
+                    return customerResponse;
+                })
+                .thenCombine(loyaltyResponseCF, (customerResponse, loyaltyResponse) -> {
+                    customerResponse.ifPresent(cr -> cr.setLoyaltyResponse(loyaltyResponse));
+                    return customerResponse;
+                })
+                .join();
 
         log.info("Operation duration {} sec", Duration.between(startTime, LocalDateTime.now()).toSeconds());
 
-        return customerResponse;
+        return response
+                .orElse(null);
     }
 
 }

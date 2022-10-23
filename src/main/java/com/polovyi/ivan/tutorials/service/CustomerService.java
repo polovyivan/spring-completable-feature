@@ -17,8 +17,10 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -50,17 +52,30 @@ public class CustomerService {
                 .filter(c -> c.getId().equals(customerId))
                 .findFirst()
                 .map(CustomerResponse::valueOf)
-                .orElseThrow();
+                .map(this::fetchCustomerInfo)
+                .orElse(null);
+
+        log.info("Operation duration {} sec", Duration.between(startTime, LocalDateTime.now()).toSeconds());
+
+        return customerResponse;
+    }
+
+    private CustomerResponse fetchCustomerInfo(CustomerResponse customerResponse) {
+        Integer customerId = customerResponse.getId();
 
         AddressResponse addressResponse = addressClient.getAddressByCustomerId(customerId)
                 .map(AddressResponse::valueOf)
                 .orElse(null);
 
-        List<PurchaseTransactionResponse> purchaseTransactionResponses = purchaseTransactionClient.getPurchaseTransactionsByCustomerId(
-                        customerId).stream().map(PurchaseTransactionResponse::valueOf)
+        List<PurchaseTransactionResponse> purchaseTransactionResponses = Stream.ofNullable(
+                        purchaseTransactionClient.getPurchaseTransactionsByCustomerId(customerId))
+                .flatMap(Collection::stream)
+                .map(PurchaseTransactionResponse::valueOf)
                 .collect(Collectors.toList());
 
-        List<FinancialResponse> financialResponses = financialClient.getFinancialInfoByCustomerId(customerId).stream()
+        List<FinancialResponse> financialResponses = Stream.ofNullable(
+                        financialClient.getFinancialInfoByCustomerId(customerId))
+                .flatMap(Collection::stream)
                 .map(FinancialResponse::valueOf)
                 .collect(Collectors.toList());
 
@@ -73,8 +88,6 @@ public class CustomerService {
         customerResponse.setPurchaseTransactions(purchaseTransactionResponses);
         customerResponse.setFinancialResponses(financialResponses);
         customerResponse.setLoyaltyResponse(loyaltyResponse);
-
-        log.info("Operation duration {} sec", Duration.between(startTime, LocalDateTime.now()).toSeconds());
 
         return customerResponse;
     }

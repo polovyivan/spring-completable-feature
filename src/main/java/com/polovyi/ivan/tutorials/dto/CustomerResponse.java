@@ -23,8 +23,6 @@ public class CustomerResponse {
 
     private String phoneNumber;
 
-    private String address;
-
     private LocalDate createdAt;
 
     private AddressResponse addressResponse;
@@ -40,7 +38,6 @@ public class CustomerResponse {
                 .id(customer.getId())
                 .fullName(customer.getFullName())
                 .phoneNumber(customer.getPhoneNumber())
-                .address(customer.getAddress())
                 .createdAt(customer.getCreatedAt())
                 .build();
     }
