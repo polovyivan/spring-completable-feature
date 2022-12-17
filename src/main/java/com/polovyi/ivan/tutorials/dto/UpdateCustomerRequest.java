@@ -5,15 +5,18 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Set;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class FinancialClientResponse {
+public class UpdateCustomerRequest {
 
-    private String id;
+    private String phoneNumber;
 
-    private String creditCardNumber;
+    private Set<FinancialRequest> financialInfo;
 
-    private String iban;
+    private UpdateAddressRequest address;
+
 }

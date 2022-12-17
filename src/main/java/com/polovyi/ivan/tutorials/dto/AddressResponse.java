@@ -25,15 +25,15 @@ public class AddressResponse {
 
     private String country;
 
-    public static AddressResponse valueOf(AddressClientResponse addressClientResponse) {
+    public static AddressResponse valueOf(Address address) {
         return AddressResponse.builder()
-                .id(addressClientResponse.getId())
-                .street(addressClientResponse.getStreet())
-                .streetNumber(addressClientResponse.getStreetNumber())
-                .city(addressClientResponse.getCity())
-                .state(addressClientResponse.getState())
-                .zipCode(addressClientResponse.getZipCode())
-                .country(addressClientResponse.getCountry())
+                .id(address.getId())
+                .street(address.getStreet())
+                .streetNumber(address.getStreetNumber())
+                .city(address.getCity())
+                .state(address.getState())
+                .zipCode(address.getZipCode())
+                .country(address.getCountry())
                 .build();
 
     }

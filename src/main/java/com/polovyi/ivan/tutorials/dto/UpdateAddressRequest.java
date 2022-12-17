@@ -5,16 +5,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AddressClientResponse {
-
-    private String id;
+public class UpdateAddressRequest {
 
     private String street;
 
@@ -27,4 +22,5 @@ public class AddressClientResponse {
     private String zipCode;
 
     private String country;
+    
 }

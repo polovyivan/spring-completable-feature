@@ -21,7 +21,7 @@ public class PurchaseTransactionResponse {
 
     private LocalDate createdAt;
 
-    public static PurchaseTransactionResponse valueOf(PurchaseTransactionClientResponse purchaseTransaction) {
+    public static PurchaseTransactionResponse valueOf(PurchaseTransaction purchaseTransaction) {
         return builder()
                 .id(purchaseTransaction.getId())
                 .paymentType(purchaseTransaction.getPaymentType())

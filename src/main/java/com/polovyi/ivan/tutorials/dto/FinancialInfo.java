@@ -5,11 +5,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class FinancialResponse {
+public class FinancialInfo {
 
     private String id;
 
@@ -17,9 +19,9 @@ public class FinancialResponse {
 
     private String iban;
 
-    public static FinancialResponse valueOf(FinancialInfo financialInfo) {
+    public static FinancialInfo valueOf(FinancialRequest financialInfo) {
         return builder()
-                .id(financialInfo.getId())
+                .id(UUID.randomUUID().toString())
                 .creditCardNumber(financialInfo.getCreditCardNumber())
                 .iban(financialInfo.getIban())
                 .build();

@@ -12,7 +12,7 @@ import java.time.LocalDate;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PurchaseTransactionClientResponse {
+public class PurchaseTransaction {
 
     private String id;
 
