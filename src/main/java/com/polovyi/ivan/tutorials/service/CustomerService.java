@@ -4,15 +4,7 @@ import com.polovyi.ivan.tutorials.client.AddressClient;
 import com.polovyi.ivan.tutorials.client.FinancialClient;
 import com.polovyi.ivan.tutorials.client.LoyaltyClient;
 import com.polovyi.ivan.tutorials.client.PurchaseTransactionClient;
-import com.polovyi.ivan.tutorials.dto.Address;
-import com.polovyi.ivan.tutorials.dto.AddressResponse;
-import com.polovyi.ivan.tutorials.dto.CustomerResponse;
-import com.polovyi.ivan.tutorials.dto.FinancialInfo;
-import com.polovyi.ivan.tutorials.dto.FinancialResponse;
-import com.polovyi.ivan.tutorials.dto.LoyaltyClientResponse;
-import com.polovyi.ivan.tutorials.dto.LoyaltyResponse;
-import com.polovyi.ivan.tutorials.dto.PurchaseTransactionResponse;
-import com.polovyi.ivan.tutorials.dto.UpdateCustomerRequest;
+import com.polovyi.ivan.tutorials.dto.*;
 import com.polovyi.ivan.tutorials.repository.CustomerRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -41,21 +33,9 @@ public record CustomerService(CustomerRepository customerRepository,
                 .collect(Collectors.toList());
     }
 
-    public CustomerResponse getCustomerById(Integer customerId) {
-        log.info("Getting customer by id {} ", customerId);
-        LocalDateTime startTime = LocalDateTime.now();
-        CustomerResponse customerResponse = customerRepository.findAll().stream()
-                .filter(c -> c.getId().equals(customerId))
-                .findFirst()
-                .map(CustomerResponse::valueOf)
-                .map(this::fetchCustomerInfo)
-                .orElse(null);
-        log.info("Operation duration {} sec", Duration.between(startTime, LocalDateTime.now()).toSeconds());
-        return customerResponse;
-    }
-
     public void replaceCustomer(Integer customerId, UpdateCustomerRequest request) {
         log.info("Replacing customer", customerId);
+        LocalDateTime startTime = LocalDateTime.now();
         customerRepository.findById(customerId)
                 .ifPresent(customerEntity -> {
                     customerEntity.setPhoneNumber(request.getPhoneNumber());
@@ -69,10 +49,12 @@ public record CustomerService(CustomerRepository customerRepository,
         Address address = Address.valueOf(request.getAddress());
         addressClient.updateAddressByCustomerId(customerId, address);
         log.info("Customer updated successfully!");
+        log.info("Operation duration {} sec", Duration.between(startTime, LocalDateTime.now()).toSeconds());
     }
 
     public void updateCustomer(Integer customerId, UpdateCustomerRequest request) {
         log.info("Updating customer", customerId);
+        LocalDateTime startTime = LocalDateTime.now();
         if (request.getPhoneNumber() != null) {
             log.info("Received a phone number, updating customer");
             customerRepository.findById(customerId)
@@ -94,6 +76,18 @@ public record CustomerService(CustomerRepository customerRepository,
             addressClient.updateAddressByCustomerId(customerId, address);
         }
         log.info("Customer updated successfully!");
+        log.info("Operation duration {} sec", Duration.between(startTime, LocalDateTime.now()).toSeconds());
+    }
+
+    public CustomerResponse getCustomerById(Integer customerId) {
+        log.info("Getting customer by id {} ", customerId);
+        LocalDateTime startTime = LocalDateTime.now();
+        CustomerResponse customerResponse = customerRepository.findById(customerId)
+                .map(CustomerResponse::valueOf)
+                .map(this::fetchCustomerInfo)
+                .orElse(null);
+        log.info("Operation duration {} sec", Duration.between(startTime, LocalDateTime.now()).toSeconds());
+        return customerResponse;
     }
 
     private CustomerResponse fetchCustomerInfo(CustomerResponse customerResponse) {
