@@ -35,7 +35,7 @@ public class CustomerCFController {
         customerCompletableFeatureService.updateCustomer(customerId, request);
     }
 
-    @GetMapping("{customerId}")
+    @GetMapping("/{customerId}")
     public CustomerResponse getCustomerByIdUsingCompletableFeature(@PathVariable Integer customerId) {
         return customerCompletableFeatureService.getCustomerById(customerId);
     }
