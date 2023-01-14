@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.concurrent.CompletableFuture;
+
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/v1/customers/completable-feature")
@@ -23,25 +25,23 @@ public class CustomerCFController {
 
     @PutMapping("/{customerId}")
     @ResponseStatus(HttpStatus.ACCEPTED)
-    public void replaceCustomerUsingCompletableFeature(@PathVariable Integer customerId,
-            @RequestBody UpdateCustomerRequest request) {
-        customerCompletableFeatureService.replaceCustomer(customerId, request);
+    public CompletableFuture<Void> replaceCustomerUsingCompletableFeature(@PathVariable Integer customerId, @RequestBody UpdateCustomerRequest request) {
+        return customerCompletableFeatureService.replaceCustomer(customerId, request);
     }
 
     @PatchMapping("/{customerId}")
     @ResponseStatus(HttpStatus.ACCEPTED)
-    public void updateCustomerUsingCompletableFeature(@PathVariable Integer customerId,
-            @RequestBody UpdateCustomerRequest request) {
-        customerCompletableFeatureService.updateCustomer(customerId, request);
+    public CompletableFuture<Void> updateCustomerUsingCompletableFeature(@PathVariable Integer customerId, @RequestBody UpdateCustomerRequest request) {
+        return customerCompletableFeatureService.updateCustomer(customerId, request);
     }
 
     @GetMapping("/{customerId}")
-    public CustomerResponse getCustomerByIdUsingCompletableFeature(@PathVariable Integer customerId) {
+    public CompletableFuture<CustomerResponse> getCustomerByIdUsingCompletableFeature(@PathVariable Integer customerId) {
         return customerCompletableFeatureService.getCustomerById(customerId);
     }
 
     @GetMapping("/all-of/{customerId}")
-    public CustomerResponse getCustomerByIdUsingCompletableFeatureUsingAllOf(@PathVariable Integer customerId) {
+    public CompletableFuture<CustomerResponse> getCustomerByIdUsingCompletableFeatureUsingAllOf(@PathVariable Integer customerId) {
         return customerCompletableFeatureService.getCustomerByIdUsingAllOf(customerId);
     }
 }
