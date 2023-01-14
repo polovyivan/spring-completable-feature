@@ -93,11 +93,11 @@ public class CustomerCompletableFeatureService {
                 addressClient.updateAddressByCustomerId(customerId, address);
             });
         }
-        Stream.of(updateCustomerCF, updateFinancialInfoCF, updateAddressCF)
+        List<CompletableFuture<Void>> completableFutures = Stream.of(updateCustomerCF, updateFinancialInfoCF, updateAddressCF)
                 .filter(Objects::nonNull)
-                .forEach(CompletableFuture::join);
+                .collect(Collectors.toList());
         log.info("Customer updated successfully!");
-        return updateCustomerCF;
+        return CompletableFuture.allOf(completableFutures.toArray(new CompletableFuture[completableFutures.size()]));
     }
 
     public CompletableFuture<CustomerResponse> getCustomerById(Integer customerId) {
